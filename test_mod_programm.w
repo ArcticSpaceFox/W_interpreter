@@ -1,0 +1,1 @@
+X = 5; Y = 2; Z = 0; while X >= Y do X = X - Y; Z = Z + 1 end
