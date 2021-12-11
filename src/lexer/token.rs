@@ -8,13 +8,16 @@
 /// ```
 #[derive(PartialEq, Debug)]
 pub enum Token {
-    // =========
-    // Types
+    ILLEGAL,
+    EOF,
+    
+    // Identifiers and Literals
+    IDENT(Vec<char>),
     INT(u64),
     TRUE,
     FALSE,
-    // =========
-    // Expressions
+
+    // Operators
     PLUS,
     MINUS,
     TIMES,
@@ -23,20 +26,20 @@ pub enum Token {
     LT,
     EQUAL,
     NOT,
-    // =========
-    IDENT(Vec<char>),
+
+    // Delimiters
     SEMICOLON,
+    
+    LPAREN,
+    RPAREN,
+    
+    // Keywords
     IF,
     ELSE,
     WHILE,
     DO,
     END,
     ABORT,
-    LPAREN,
-    RPAREN,
-    // =========
-    ILLEGAL,
-    EOF,
 }
 
 pub fn get_keyword_token(ident: &Vec<char>) -> Result<Token, String> {
