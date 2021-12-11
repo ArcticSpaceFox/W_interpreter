@@ -1,33 +1,39 @@
 /// A Token is a string with an assigned and thus identified meaning. It is 
 /// structured as a pair consisting of a token name and an optional token value. 
+/// 
+/// ```rust
+/// use winter::lexer::token::Token;
+/// 
+/// let t = Token::INT(123);
+/// ```
 #[derive(PartialEq, Debug)]
 pub enum Token {
     // =========
     // Types
-    INT(Vec<char>),
+    INT(u64),
     TRUE,
     FALSE,
     // =========
     // Expressions
-    PLUS(char),
-    MINUS(char),
-    TIMES(char),
-    SLASH(char),
-    GT(char),
-    LT(char),
-    EQUAL(char),
-    NOT(char),
+    PLUS,
+    MINUS,
+    TIMES,
+    SLASH,
+    GT,
+    LT,
+    EQUAL,
+    NOT,
     // =========
     IDENT(Vec<char>),
-    SEMICOLON(char),
+    SEMICOLON,
     IF,
     ELSE,
     WHILE,
     DO,
     END,
     ABORT,
-    LPAREN(char),
-    RPAREN(char),
+    LPAREN,
+    RPAREN,
     // =========
     ILLEGAL,
     EOF,

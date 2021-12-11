@@ -1,6 +1,14 @@
+use self::token::Token;
+
 pub mod token;
 
-/// The Lexer itself
+/// The Lexer will parse a String into Tokens
+/// 
+/// Can be used as follows:
+/// ```rust
+/// let mut l = winter::lexer::Lexer::new("123");
+/// println!("{:?}", l.next())
+/// ```
 #[derive(Debug)]
 pub struct Lexer {
     /// Source Code
@@ -16,17 +24,23 @@ pub struct Lexer {
 #[allow(unused)]
 impl Lexer {
     /// Initializes a new Lexer instance with given input
+    /// 
+    /// ```rust
+    /// let l = winter::lexer::Lexer::new("1");
+    /// ```
     pub fn new(input: &str) -> Self {
-        Self {
+        let mut new = Self {
             input: input.chars().collect::<Vec<char>>(),
             position: 0,
             read_position: 0,
             ch: '#',
-        }
+        };
+        new.read_char();
+        new
     }
 
     /// Reads next char, updates the positions
-    pub fn read_char(&mut self) {
+    fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
             self.ch = '#';
         } else {
@@ -36,7 +50,8 @@ impl Lexer {
         self.read_position = self.read_position + 1;
     }
 
-    pub fn skip_whitespace(&mut self) {
+    /// Skips unneeded whitespace, we just want Tokens
+    fn skip_whitespace(&mut self) {
         let ch = self.ch;
         if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
             self.read_char();
@@ -63,17 +78,17 @@ impl Lexer {
 
         self.skip_whitespace();
         let tok = match self.ch {
-            '+' => token::Token::PLUS(self.ch),
-            '-' => token::Token::MINUS(self.ch),
-            '*' => token::Token::TIMES(self.ch),
-            '/' => token::Token::SLASH(self.ch),
-            '>' => token::Token::GT(self.ch),
-            '<' => token::Token::LT(self.ch),
-            '=' => token::Token::EQUAL(self.ch),
-            '!' => token::Token::NOT(self.ch),
-            '(' => token::Token::LPAREN(self.ch),
-            ')' => token::Token::RPAREN(self.ch),
-            ';' => token::Token::SEMICOLON(self.ch),
+            '+' => token::Token::PLUS,
+            '-' => token::Token::MINUS,
+            '*' => token::Token::TIMES,
+            '/' => token::Token::SLASH,
+            '>' => token::Token::GT,
+            '<' => token::Token::LT,
+            '=' => token::Token::EQUAL,
+            '!' => token::Token::NOT,
+            '(' => token::Token::LPAREN,
+            ')' => token::Token::RPAREN,
+            ';' => token::Token::SEMICOLON,
             '#' => token::Token::EOF,
             _ => {
                 if self.ch.is_alphabetic() {
@@ -87,8 +102,8 @@ impl Lexer {
                         }
                     }
                 } else if self.ch.is_numeric() {
-                    let ident: Vec<char> = read_number(self);
-                    return token::Token::INT(ident);
+                    let ident = read_number(self).iter().collect::<String>();
+                    return token::Token::INT(u64::from_str_radix(ident.as_str(), 10).expect("Was not a number"));
                 } 
                 else {
                     return token::Token::ILLEGAL
@@ -101,6 +116,25 @@ impl Lexer {
     }
 }
 
+/// Implement the Iterator trait
+/// 
+/// ```rust
+/// let mut l = winter::lexer::Lexer::new("A = 1");
+/// 
+/// assert_eq!(Some(winter::lexer::token::Token::IDENT(vec!['A'])), l.next());
+/// ```
+impl Iterator for Lexer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.next_token();
+        if next == token::Token::EOF {
+            return None;
+        }
+        Some(next)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,8 +143,6 @@ mod tests {
     fn test_empty() {
         let input = "";
         let mut l = Lexer::new(input);
-        
-        l.read_char();
         
         let mut tokens = vec![];
         loop {
@@ -130,8 +162,6 @@ mod tests {
         let input = "=<>!/*+";
         let mut l = Lexer::new(input);
         
-        l.read_char();
-        
         let mut tokens = vec![];
         loop {
             let token = l.next_token();
@@ -143,13 +173,13 @@ mod tests {
         }
 
         assert_eq!(tokens, vec![
-            token::Token::EQUAL('='),
-            token::Token::LT('<'),
-            token::Token::GT('>'),
-            token::Token::NOT('!'),
-            token::Token::SLASH('/'),
-            token::Token::TIMES('*'),
-            token::Token::PLUS('+'),
+            token::Token::EQUAL,
+            token::Token::LT,
+            token::Token::GT,
+            token::Token::NOT,
+            token::Token::SLASH,
+            token::Token::TIMES,
+            token::Token::PLUS,
         ]);
     }
 
@@ -157,8 +187,6 @@ mod tests {
     fn test_assign_to_ident() {
         let input = "A = 5";
         let mut l = Lexer::new(input);
-        
-        l.read_char();
         
         let mut tokens = vec![];
         loop {
@@ -172,8 +200,44 @@ mod tests {
 
         assert_eq!(tokens, vec![
             token::Token::IDENT(vec!['A']),
-            token::Token::EQUAL('='),
-            token::Token::INT(vec!['5'])
+            token::Token::EQUAL,
+            token::Token::INT(5)
         ]);
+    }
+
+    #[test]
+    fn test_big_number() {
+        let input = "66424";
+        let mut l = Lexer::new(input);
+        
+        assert_eq!(l.next_token(), 
+            token::Token::INT(66424)
+        );
+    }
+
+    #[test]
+    fn test_invalid_number() {
+        let input = "123_456";
+        let l = Lexer::new(input);
+        
+        assert_eq!(l.take(3).collect::<Vec<Token>>(), vec![
+            token::Token::INT(123),
+            token::Token::ILLEGAL,
+            token::Token::ILLEGAL
+        ]);
+    }
+
+    #[test]
+    fn test_iterator() {
+        let input = "B = 1";
+        let l = Lexer::new(input);
+     
+        let res = l.take(3).collect::<Vec<Token>>();
+
+        assert_eq!(res, vec![
+            token::Token::IDENT(vec!['B']),
+            token::Token::EQUAL,
+            token::Token::INT(1)
+        ])
     }
 }
