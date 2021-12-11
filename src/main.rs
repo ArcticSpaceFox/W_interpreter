@@ -27,15 +27,9 @@ fn main() -> Result<()> {
     }
 
     let input = std::fs::read_to_string(file_path).expect("Could not read file");
-    let mut l = lexer::Lexer::new(&input);
-    l.read_char();
-    loop {
-        let token = l.next_token();
-        if token == lexer::token::Token::EOF {
-            break;
-        } else {
-            println!("{:?}", token);
-        }
+    let l = lexer::Lexer::new(&input);
+    for t in l {
+        println!("{:?}", t);
     }
 
     Ok(())

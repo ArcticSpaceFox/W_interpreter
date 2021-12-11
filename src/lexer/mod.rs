@@ -9,7 +9,7 @@ pub mod token;
 /// let mut l = winter::lexer::Lexer::new("123");
 /// println!("{:?}", l.next())
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Lexer {
     /// Source Code
     input: Vec<char>,
@@ -102,8 +102,12 @@ impl Lexer {
                         }
                     }
                 } else if self.ch.is_numeric() {
-                    let ident = read_number(self).iter().collect::<String>();
-                    return token::Token::INT(u64::from_str_radix(ident.as_str(), 10).expect("Was not a number"));
+                    let ident = read_number(self).iter()
+                        .collect::<String>();
+                    return token::Token::INT(u64::from_str_radix(
+                        ident.as_str(), 
+                        10
+                    ).expect("Was not a number"));
                 } 
                 else {
                     return token::Token::ILLEGAL
@@ -234,10 +238,35 @@ mod tests {
      
         let res = l.take(3).collect::<Vec<Token>>();
 
-        assert_eq!(res, vec![
-            token::Token::IDENT(vec!['B']),
-            token::Token::EQUAL,
-            token::Token::INT(1)
-        ])
+        assert_eq!(
+            res, 
+            vec![
+                token::Token::IDENT(vec!['B']),
+                token::Token::EQUAL,
+                token::Token::INT(1)
+            ],
+            "The Lexer should be working when used via the Iterator concepts"
+        );
+    }
+
+    #[test]
+    fn test_if_none_when_empty() {
+        let mut l = Lexer::new("");
+        assert_eq!(
+            None,
+            l.next(),
+            "Tests if Iterator returns None when nothing is left"
+        )
+    }
+
+    #[test]
+    fn test_long_identifier() {
+        let mut l = Lexer::new("Test = 1");
+
+        assert_eq!(
+            Some(token::Token::IDENT(vec!['T', 'e', 's', 't'])), 
+            l.next(),
+            "Long identifiers should still be working"
+        );
     }
 }
